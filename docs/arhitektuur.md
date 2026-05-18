@@ -23,6 +23,11 @@ Seetõttu kasutame `FORECAST_DAYS=2`.
 - `>28°C` → ventilatsioon vajalik
 - muidu sobiv
 
+- ### Asukohavaliku põhjendus
+
+Kuigi projekt ei kasuta konkreetse kasvuhoone sisetemperatuuri sensoreid, on eesmärk pakkuda otsustusabi eri Eesti piirkondade kasvuhoone omanikele.  
+Seetõttu on `mart.dim_location` tabelis mitu Eesti asulat: need toimivad piirkondlike “esinduspunktidena”, mille põhjal saab võrrelda, kus ja millal on küte/ventilatsioon börsihinna mõttes soodsam.
+
 ## Andmekihid
 - `staging`: toorandmed API-dest
 - `mart`: otsuseloogika ja koondid
