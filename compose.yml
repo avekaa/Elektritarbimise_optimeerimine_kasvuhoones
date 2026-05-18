@@ -1,0 +1,100 @@
+services:
+  db:
+    image: pgduckdb/pgduckdb:18-v1.1.1
+    container_name: project-template-weather-db
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${DB_PORT_HOST:-55432}:5432"
+    volumes:
+      - ./init:/docker-entrypoint-initdb.d
+      - weather_pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-praktikum} -d ${POSTGRES_DB:-praktikum}"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+
+  pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    container_name: project-template-weather-pipeline
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./scripts:/app/scripts
+    working_dir: /app
+    tty: true
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    container_name: project-template-weather-scheduler
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB}
+      PIPELINE_CRON: "${PIPELINE_CRON:-0 * * * *}"
+      RUN_ON_STARTUP: ${RUN_ON_STARTUP:-true}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./scripts:/app/scripts
+    working_dir: /app
+    command: ["bash", "scripts/start_cron.sh"]
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    container_name: project-template-weather-dashboard
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB}
+      DASHBOARD_AUTOREFRESH_SECONDS: ${DASHBOARD_AUTOREFRESH_SECONDS:-15}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./dashboard:/app/dashboard
+    working_dir: /app
+    command:
+      [
+        "streamlit",
+        "run",
+        "dashboard/app.py",
+        "--server.address=0.0.0.0",
+        "--server.port=8501",
+        "--server.headless=true"
+      ]
+    ports:
+      - "${DASHBOARD_PORT_HOST:-8501}:8501"
+
+volumes:
+  weather_pgdata:
+    name: project-template-weather-pgdata
