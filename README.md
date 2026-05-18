@@ -11,9 +11,16 @@ Millistel tundidel tasub kasvuhoones kasutada elektrit nõudvaid seadmeid (küte
 
 Mudelit kasutatakse demonstratsiooniks.
 
-## Andmeallikad
-- Open-Meteo Forecast API
-- Elering NPS API (`/api/nps/price`)
+## Andmeallikad ja ulatus
+
+Selles projektis modelleerime kasvuhoone otsuseid piirkondliku ilma põhjal mitmes Eesti asulas.  
+Asukohad tabelis `mart.dim_location` esindavad eri piirkondades tegutsevaid kasvuhoone omanikke, et võrrelda kütte- ja ventilatsioonivajadust ning börsihinna mõju üle Eesti.
+
+Põhiandmeallikad:
+- **Open-Meteo Forecast API** (välistemperatuur ja teised tunniandmed),
+- **Elering NPS API** (börsihind tunni kaupa).
+
+Oluline piirang: Eleringi day-ahead hinnad on otsustamiseks usaldusväärselt kättesaadavad peamiselt tänase ja homse kohta, seega kasutame lühikest otsustusakent (`FORECAST_DAYS=2`).
 
 ## Miks FORECAST_DAYS=2?
 Elering day-ahead hinnad on otsustamiseks peamiselt tänase ja homse kohta.  
