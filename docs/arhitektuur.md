@@ -1,130 +1,5 @@
 # Arhitektuur ja planeerimine (18.05–24.05)
 
-<<<<<<< ours
-# Arhitektuur (nädal 1)
-
-## Äriküsimus
-Millistel tundidel tasub kasvuhoones kasutada kütet/ventilatsiooni, et vähendada elektrikulu börsihinna tingimustes?
-
-## Mõõdikud (KPI)
-1. Soovitatud kütte- ja ventilatsioonitunnid päevas.
-2. Keskmine börsihind soovitatud tundidel vs päeva keskmine.
-3. Hinnanguline päevane energiakulu.
-
-## Andmeallikad
-1. **Open-Meteo Forecast API** (ajas muutuv)
-2. **Elering NPS price API** (ajas muutuv, day-ahead)
-
-## Oluline andmepiirang
-Eleringi day-ahead hind tähendab, et praktiline otsustusaken on lühike (täna + homme).  
-Seetõttu kasutame `FORECAST_DAYS=2`.
-
-## Lihtsustusmudel
-- `hinnanguline_sisetemp = välistemp + 5°C`
-- `<12°C` → küte vajalik
-- `>28°C` → ventilatsioon vajalik
-- muidu sobiv
-
-- ### Asukohavaliku põhjendus
-
-Kuigi projekt ei kasuta konkreetse kasvuhoone sisetemperatuuri sensoreid, on eesmärk pakkuda otsustusabi eri Eesti piirkondade kasvuhoone omanikele.  
-Seetõttu on `mart.dim_location` tabelis mitu Eesti asulat: need toimivad piirkondlike “esinduspunktidena”, mille põhjal saab võrrelda, kus ja millal on küte/ventilatsioon börsihinna mõttes soodsam.
-
-## Andmekihid
-- `staging`: toorandmed API-dest
-- `mart`: otsuseloogika ja koondid
-- `quality`: testitulemused
-
-## Tehniline voog
-```mermaid
-flowchart LR
-    A[Open-Meteo API] --> B[Pipeline ingest]
-    C[Elering API] --> B
-    B --> D[(staging)]
-    D --> E[SQL transform]
-    E --> F[(mart)]
-    F --> G[Dashboard]
-    F --> H[Quality tests]
-
-    ## 6) Andmekihid
-
-### staging
-API-dest laetud toorandmed (tunnipõhised kirjed).
-
-### mart
-Otsustamiseks vajalikud mudel- ja koondtabelid.
-
-### quality
-Andmekvaliteedi testide tulemused.
-
----
-
-## 7) Tehniline voog (otsast lõpuni)
-
-1. Scheduler või käsukäivitus alustab pipeline run’i.
-2. Ingest loeb Open-Meteo ja Elering API andmed.
-3. Toorandmed salvestatakse `staging` kihti.
-4. Transformatsioon loob `mart` kihti otsusetabelid:
-   - hinnanguline sisetemperatuur,
-   - tegevussoovitus (`heating`, `ventilation`, `none`),
-   - hinnapõhised võrdlused.
-5. Quality testid kontrollivad andmete usaldusväärsust.
-6. Dashboard kuvab KPI-d ja soovitused.
-
----
-
-## 8) Rollid (4 liiget)
-
-### Osaleja A – ingest + ajastus
-- API ühendused (Open-Meteo + Elering)
-- `.env` seadistus
-- cron/scheduler käivituse kontroll
-
-### Osaleja B – transformatsioonid
-- SQL loogika `mart` kihti
-- reeglite rakendus (`+5°C`, läved `12°C` / `28°C`)
-
-### Osaleja C – andmekvaliteet
-- vähemalt 3 sisukat testi
-- testitulemuste jälgimine
-
-### Osaleja D – dashboard + esitlus
-- visualiseerimine KPI-de järgi
-- README viimistlus ja demo/video
-
----
-
-## 9) Andmekvaliteedi testid (esmane plaan)
-
-### Kohustuslikud testid
-- elektrihind ei tohi olla `NULL`;
-- temperatuur peab jääma mõistlikku vahemikku (`-50..50`);
-- sama käivituse, asukoha ja tunni kohta peab kirje olema unikaalne.
-
-### Soovitatavad lisatestid
-- otsusetabelis peab `action` olema ainult:
-  - `heating`
-  - `ventilation`
-  - `none`
-- hinnanguline sisetemperatuur peab jääma mõistlikku vahemikku.
-
----
-
-## 10) Riskid ja leevendused
-
-### API 502 / timeout vead
-**Leevendus:** retry-loogika, väiksem `FORECAST_DAYS`, korduskäivitus.
-
-### Hinna ja ilma ajaline mittekattuvus
-**Leevendus:** otsustabelisse lähevad ainult tunnid, kus mõlemad andmed on olemas.
-
-### Ajavööndi nihked
-**Leevendus:** ühtne ajavöönd ja kontrollpäringud pärast ingestit.
-
-### Liiga pikk prognoos, millele hinnad puuduvad
-**Leevendus:** hoida otsustusaken day-ahead loogikaga kooskõlas (`FORECAST_DAYS=2`).q
-<<<<<<< HEAD
-=======
 ## Reposid
 - Kursuse infoallikas: `https://github.com/KristoR/ut-andmeinseneeria-2026`
 - Projekti töörepo: `https://github.com/sirja-hass/Elektritarbimise_optimeerimine_kasvuhoones`
@@ -132,10 +7,16 @@ Andmekvaliteedi testide tulemused.
 ## 1) Äriküsimus
 Millistel tundidel tasub kasvuhoones kasutada elektrit nõudvaid seadmeid (küte, ventilatsioon), et vähendada elektrikulu börsihinna tingimustes, arvestades välistemperatuuri?
 
-## 2) Mõõdikud (2–3)
-1. **Soovitatud tunnid kütte ja ventilatsiooni kasutamiseks.**
-2. **Keskmine spot-hind soovitatud tundidel** vs päeva keskmine spot-hind.
-3. **Hinnanguline päevane kulu** (€) reeglipõhise juhtimise korral.
+## 2) Mõõdikud (2–3) ja arvutusloogika
+1. **Soovitatud kütte ja ventilatsiooni tunnid päevas**  
+   Arvutusloogika: iga tunni kohta arvutame `hinnanguline_sisetemp = välistemp + 5°C`.  
+   Kui hinnanguline sisetemperatuur on alla 12°C, märgime tunni küttevajaduseks; kui üle 28°C, ventilatsioonivajaduseks; vastasel juhul “none”. Päevane mõõdik on nende tundide arv kokku.
+
+2. **Keskmine spot-hind soovitatud tundidel vs päeva keskmine spot-hind**  
+   Arvutusloogika: võtame kõik tunnid, kus tegevus on `heating` või `ventilation`, ja arvutame nende tundide keskmise `price_eur_mwh`. Võrdleme seda sama päeva kõigi tundide keskmise hinnaga, et näha, kas soovitused langevad kallimatesse või odavamatesse tundidesse.
+
+3. **Hinnanguline päevane energiakulu (€)**  
+   Arvutusloogika: iga soovitatud tunni kohta korrutame seadme hinnangulise tarbimise (kWh/h) ja vastava tunni spot-hinna (€/MWh ümber teisendatuna €/kWh), seejärel summeerime päeva lõikes.
 
 ## 3) Lihtsustusmudel (baastase)
 Kuna sisetemperatuuri sensorit ei kasutata, arvutame hinnangu:
@@ -150,49 +31,63 @@ Reeglid:
 Mudelit kasutatakse demonstratsiooniks ning tegemist ei ole täpse agronoomilise simulatsiooniga.
 
 ## 4) Andmeallikad ja muutuvus
-- **Elektri spot-hind (API):** tunnipõhine, muutub ajas (põhiandmevoog).
-- **Ilmaandmed (API):** tunnipõhine prognoos/ajalooline välistemperatuur + päikesekiirgus (põhiandmevoog).
-- **Staatilised kõrvalandmed (vajadusel):** seadmete nimivõimsused (CSV seed), et arvutada kulu.
+1. **Elering NPS API (`/api/nps/price`)**  
+   - Andmetüüp: elektri spot-hind tunni kaupa (Eesti piirkond).  
+   - Ajas muutuvus: Nord Pool day-ahead hinnad avaldatakse üldiselt kord päevas (järgmise päeva 24 tundi).  
+   - Kasutus projektis: hinnapõhiste tegevustundide ja kulu võrdlus.
 
-## 5) Arhitektuuriskeem (Mermaid)
+2. **Open-Meteo Forecast API**  
+   - Andmetüüp: tunnipõhine välistemperatuuri prognoos (ja vajadusel lisatunnused).  
+   - Ajas muutuvus: prognoosiväärtused uuenevad regulaarselt (mitu korda päevas; päringut teeme pipeline jooksu ajal, vaikimisi iga tunni alguses croniga).  
+   - Kasutus projektis: sisetemperatuuri hinnangu alus.
+
+3. **Staatiline dimensioon (`scripts/00_seed_dimensions.sql`)**  
+   - Andmetüüp: 5 Eesti asula kirjeldus (`mart.dim_location`).  
+   - Ajas muutuvus: käsitsi hallatav seed; muutub ainult siis, kui uuendame asulate loetelu.
+
+## 5) Andmevoog (Mermaid)
 ```mermaid
 flowchart LR
     A[Elering API] --> B[Python ingest]
-    C[Ilma API] --> B
+    C[Open-Meteo API] --> B
 
-    B --> D[(PostgreSQL / Supabase)]
-
+    B --> D[(staging)]
     D --> E[SQL transformatsioonid]
-
-    E --> F[(Analytics tabel)]
+    E --> F[(mart)]
 
     F --> G[Dashboard]
-
     F --> H[Andmekvaliteedi testid]
 ```
 
 ## 6) Tööjaotus (4 liiget)
 1. **Liige A – Ingest & ajastus**
-   - API connectorid (hind + ilm), `.env` seadistus, ajastus.
+   - API ühendused (hind + ilm), `.env` seadistus, cron/scheduler.
 2. **Liige B – Andmemudel & transformatsioon**
-   - Bronze/Silver/Gold mudelid, joinid, reeglite rakendus.
+   - `01_transform.sql`, otsuseloogika (`+5°C`, läved 12/28), hinnaga join.
 3. **Liige C – Andmekvaliteet**
-   - Testid:
-     - elektrihind ei tohi olla NULL
-     - temperatuur peab jääma mõistlikku vahemikku
-     - tunnikirjed peavad olema unikaalsed
+   - `02_quality_tests.sql` ja `03_check_results.sql`.
+   - Minimaalsed testid: `price_eur_mwh not null`, temperatuuri vahemik, `run+location+time` unikaalsus.
 4. **Liige D – Dashboard & esitlus**
-   - KPI visualid, README viimistlus, demo-video.
+   - `dashboard/app.py`, KPI visualid, README viimistlus, demo-video.
 
-## 7) Riskid (2–3)
-1. API katkestused või päringupiirangud (rate limit).
-2. Ajavööndite vastuolu (UTC vs Europe/Tallinn) tunniandmete joinimisel.
-3. API andmete puudumine või vigased tunnikirjed.
 
-## 8) Nädala väljundid
+## 7) Riskid (realistlikud)
+1. **Hinnainfo ulatusrisk:** Eleringi day-ahead hinnad katavad praktiliselt tänase/homse vaate; liiga pikk prognoosiaken tekitab tunde, kus ilm on olemas, kuid hind puudub.  
+   Leevendus: kasutada otsustusakent `FORECAST_DAYS=2` ja filtreerida transformis read, kus hind puudub.
+
+2. **Ajavööndi joondusrisk:** API-d võivad tagastada aegu erinevas formaadis/ajavööndis; vale joondus rikub tunni-põhise joini.  
+   Leevendus: normaliseerida ajad ühte ajavööndisse (UTC või Europe/Tallinn) ingestis ja kontrollida joini testpäringutega.
+
+3. **Andmekvaliteedi risk:** vigased või puuduvad väärtused (`NULL` hind, ebatõenäoline temperatuur, duplikaadid) moonutavad soovitusi.  
+   Leevendus: käivitada quality testid igal pipeline jooksul ja katkestada “success” raport, kui testid kukuvad läbi.
+
+## 8) Privaatsus ja turve
+- API võtmeid ega paroole ei hoita koodis.
+- Keskkonnamuutujad hoitakse `.env` failis (lokaalne, `.gitignore` all).
+- Repos hoitakse ainult `.env.example`, et tiim näeks vajalikke võtmenimesid ilma salajasi väärtusi jagamata.
+- Kui lisanduvad tööandja andmed, kasutatakse anonüümseid/sünteetilisi näidiseid avalikus repos.
+
+## 9) Nädala väljundid
 - `docs/arhitektuur.md` valmis.
 - API-de testpäringud tehtud.
 - Rollid ja esmane tehniline plaan paigas.
->>>>>>> theirs
-=======
->>>>>>> 3806c40c6f83c919c3b30ad8122f10563a9c09b4
