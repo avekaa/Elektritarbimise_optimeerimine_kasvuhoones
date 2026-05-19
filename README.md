@@ -48,8 +48,7 @@ Mudelit kasutatakse demonstratsiooniks ning tegemist ei ole täpse agronoomilise
 ### Elektrihinnad
 - Elering API
 ## Andmeallikad ja ulatus
-Selles projektis modelleerime kasvuhoone otsuseid piirkondliku ilma põhjal mitmes Eesti asulas.
-Asukohad tabelis `mart.dim_location` esindavad eri piirkondades tegutsevaid kasvuhoone omanikke, et võrrelda kütte- ja ventilatsioonivajadust ning börsihinna mõju üle Eesti.
+Selles projektis modelleerime kasvuhoone otsuseid piirkondliku ilma põhjal 5 Eesti asulaga (Tallinn, Tartu, Pärnu, Kohtla-Järve, Kuressaare).
 
 ### Ilmaandmed
 - Ilmateenistuse API
