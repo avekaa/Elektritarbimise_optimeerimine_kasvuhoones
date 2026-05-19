@@ -53,17 +53,8 @@ VALUES
     ('tallinn', 'Tallinn', 'Eesti', 'Harju maakond', 'asula', 59.4370, 24.7536, 10, true),
     ('tartu', 'Tartu', 'Eesti', 'Tartu maakond', 'asula', 58.3776, 26.7290, 20, true),
     ('parnu', 'Pärnu', 'Eesti', 'Pärnu maakond', 'asula', 58.3859, 24.4971, 30, true),
-    ('narva', 'Narva', 'Eesti', 'Ida-Viru maakond', 'asula', 59.3797, 28.1791, 40, true),
-    ('rakvere', 'Rakvere', 'Eesti', 'Lääne-Viru maakond', 'asula', 59.3464, 26.3558, 50, true),
-    ('otepaa', 'Otepää', 'Eesti', 'Valga maakond', 'asula', 58.0583, 26.4967, 60, true),
-    ('kohtla-jarve', 'Kohtla-Järve', 'Eesti', 'Ida-Viru maakond', 'asula', 59.3986, 27.2731, 70, true),
-    ('viljandi', 'Viljandi', 'Eesti', 'Viljandi maakond', 'asula', 58.3639, 25.5900, 80, true),
-    ('voru', 'Võru', 'Eesti', 'Võru maakond', 'asula', 57.8428, 27.0194, 90, true),
-    ('kuressaare', 'Kuressaare', 'Eesti', 'Saare maakond', 'asula', 58.2520, 22.4869, 100, true),
-    ('haapsalu', 'Haapsalu', 'Eesti', 'Lääne maakond', 'asula', 58.9431, 23.5414, 110, true),
-    ('valga', 'Valga', 'Eesti', 'Valga maakond', 'asula', 57.7778, 26.0473, 120, true),
-    ('paide', 'Paide', 'Eesti', 'Järva maakond', 'asula', 58.8856, 25.5572, 130, true),
-    ('johvi', 'Jõhvi', 'Eesti', 'Ida-Viru maakond', 'asula', 59.3592, 27.4211, 140, true);
+    ('kohtla-jarve', 'Kohtla-Järve', 'Eesti', 'Ida-Viru maakond', 'asula', 59.3986, 27.2731, 40, true),
+    ('kuressaare', 'Kuressaare', 'Eesti', 'Saare maakond', 'asula', 58.2520, 22.4869, 50, true);
 
 INSERT INTO mart.dim_location (
     location_id,
