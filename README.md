@@ -35,7 +35,6 @@ Juhtimisreeglid:
 arvestades:
 - elektri börsihinda
 - välistemperatuuri
-- päikesekiirgust - kas selle jätame välja?
 Mudelit kasutatakse demonstratsiooniks ning tegemist ei ole täpse agronoomilise simulatsiooniga.
 
 ## Andmeallikad
