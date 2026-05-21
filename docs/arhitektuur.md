@@ -61,14 +61,30 @@ flowchart LR
 
 ## 6) Tööjaotus (4 liiget)
 1. **Liige A – Ingest & ajastus**
-   - API ühendused (hind + ilm), `.env` seadistus, cron/scheduler.
+Vastutab andmete sissevõtu eest:
+- API ühendused (Open-Meteo + Elering)
+- .env ja konfiguratsiooni seadistus
+- run_pipeline.py ingest loogika
+- andmete laadimine staging kihti
+- cron/scheduler automaatne käivitamine
 2. **Liige B – Andmemudel & transformatsioon**
-   - `01_transform.sql`, otsuseloogika (`+5°C`, läved 12/28), hinnaga join.
+  - 01_transform.sql
+- otsuseloogika (sisetemperatuur = välistemp + 5°C)
+- kütte ja ventilatsiooni reeglid
+- hinnainfo sidumine transformatsioonis
+- mart kiht
 3. **Liige C – Andmekvaliteet**
-   - `02_quality_tests.sql` ja `03_check_results.sql`.
-   - Minimaalsed testid: `price_eur_mwh not null`, temperatuuri vahemik, `run+location+time` unikaalsus.
+   - 02_quality_tests.sql
+- 03_check_results.sql
+- kvaliteedireeglid:
+  - price_eur_mwh NOT NULL
+  - temperatuuri vahemikud
+  - run+location+time unikaalsus
 4. **Liige D – Dashboard & esitlus**
-   - `dashboard/app.py`, KPI visualid, README viimistlus, demo-video.
+  - dashboard/app.py
+- KPI visualiseerimine
+- README viimistlus
+- demo ja esitlus
 
 
 ## 7) Riskid (realistlikud)
