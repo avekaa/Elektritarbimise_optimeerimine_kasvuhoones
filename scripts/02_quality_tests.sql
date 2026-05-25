@@ -96,12 +96,12 @@ test_cases AS (
     UNION ALL
 
     SELECT
-        'price_not_null' AS test_name,
-        COUNT(*)::integer AS failed_rows,
-        'Elektrihind ei tohi olla NULL viimase eduka laadimise ridades.' AS message
-    FROM staging.weather_hourly_raw w
-    JOIN latest_run r ON r.run_id = w.run_id
-    WHERE w.price_eur_mwh IS NULL
+    'price_not_null' AS test_name,
+    COUNT(*)::integer AS failed_rows,
+    'Mart tabelis ei tohi elektrihind olla NULL.' AS message
+    FROM mart.fact_weather_forecast f
+    JOIN latest_run r ON r.run_id = f.run_id
+    WHERE f.price_eur_mwh IS NULL
 
     UNION ALL
 
