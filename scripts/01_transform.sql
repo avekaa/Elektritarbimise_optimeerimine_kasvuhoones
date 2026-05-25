@@ -162,6 +162,44 @@ SELECT
 FROM windows;
 
 -- 4) Päevakoond
+WITH hourly_costs AS (
+    SELECT
+        h.*,
+        AVG(h.price_eur_mwh) OVER (
+            PARTITION BY h.run_id, h.location_id, h.forecast_date
+        ) AS day_avg_price_eur_mwh,
+
+        CASE
+            WHEN h.action_needed = 'heating' THEN 5
+            WHEN h.action_needed = 'ventilation' THEN 2
+            ELSE 0
+        END AS energy_kwh
+    FROM mart.hourly_weather_score h
+),
+daily_base AS (
+    SELECT
+        run_id,
+        location_id,
+        location_name,
+        forecast_date,
+        COUNT(*)::integer AS forecast_hours,
+        ROUND(AVG(temperature_c), 2) AS avg_temp_c,
+        MAX(temperature_c) AS max_temp_c,
+        SUM(CASE WHEN action_needed = 'heating' THEN 1 ELSE 0 END)::integer AS heating_hours,
+        SUM(CASE WHEN action_needed = 'ventilation' THEN 1 ELSE 0 END)::integer AS ventilation_hours,
+        ROUND(AVG(price_eur_mwh), 2) AS avg_price_eur_mwh,
+
+        ROUND(SUM(energy_kwh * price_eur_mwh / 1000), 2) AS rule_based_cost_eur,
+        ROUND(SUM(energy_kwh * day_avg_price_eur_mwh / 1000), 2) AS avg_price_cost_eur,
+
+        CASE
+            WHEN SUM(CASE WHEN action_needed IN ('heating', 'ventilation') THEN 1 ELSE 0 END) >= 12 THEN 'Kõrgem energiavajadus'
+            WHEN SUM(CASE WHEN action_needed IN ('heating', 'ventilation') THEN 1 ELSE 0 END) >= 6 THEN 'Mõõdukas energiavajadus'
+            ELSE 'Madal energiavajadus'
+        END AS weather_risk_level
+    FROM hourly_costs
+    GROUP BY run_id, location_id, location_name, forecast_date
+)
 INSERT INTO mart.daily_weather_summary (
     run_id,
     location_id,
@@ -173,26 +211,27 @@ INSERT INTO mart.daily_weather_summary (
     heating_hours,
     ventilation_hours,
     avg_price_eur_mwh,
+    rule_based_cost_eur,
+    avg_price_cost_eur,
+    estimated_savings_eur,
     weather_risk_level
 )
 SELECT
-    h.run_id,
-    h.location_id,
-    h.location_name,
-    h.forecast_date,
-    COUNT(*)::integer AS forecast_hours,
-    ROUND(AVG(h.temperature_c), 2) AS avg_temp_c,
-    MAX(h.temperature_c) AS max_temp_c,
-    SUM(CASE WHEN h.action_needed = 'heating' THEN 1 ELSE 0 END)::integer AS heating_hours,
-    SUM(CASE WHEN h.action_needed = 'ventilation' THEN 1 ELSE 0 END)::integer AS ventilation_hours,
-    ROUND(AVG(h.price_eur_mwh), 2) AS avg_price_eur_mwh,
-    CASE
-        WHEN SUM(CASE WHEN h.action_needed IN ('heating', 'ventilation') THEN 1 ELSE 0 END) >= 12 THEN 'Kõrgem energiavajadus'
-        WHEN SUM(CASE WHEN h.action_needed IN ('heating', 'ventilation') THEN 1 ELSE 0 END) >= 6 THEN 'Mõõdukas energiavajadus'
-        ELSE 'Madal energiavajadus'
-    END AS weather_risk_level
-FROM mart.hourly_weather_score h
-GROUP BY h.run_id, h.location_id, h.location_name, h.forecast_date;
+    run_id,
+    location_id,
+    location_name,
+    forecast_date,
+    forecast_hours,
+    avg_temp_c,
+    max_temp_c,
+    heating_hours,
+    ventilation_hours,
+    avg_price_eur_mwh,
+    rule_based_cost_eur,
+    avg_price_cost_eur,
+    ROUND(avg_price_cost_eur - rule_based_cost_eur, 2) AS estimated_savings_eur,
+    weather_risk_level
+FROM daily_base;
 
 -- latest views
 CREATE OR REPLACE VIEW mart.latest_pipeline_run AS
