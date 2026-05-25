@@ -95,6 +95,11 @@ CREATE TABLE IF NOT EXISTS mart.daily_weather_summary (
     heating_hours integer NOT NULL,
     ventilation_hours integer NOT NULL,
     avg_price_eur_mwh numeric(10, 2),
+
+    rule_based_cost_eur numeric(10, 2),
+    avg_price_cost_eur numeric(10, 2),
+    estimated_savings_eur numeric(10, 2),
+
     weather_risk_level text NOT NULL,
     PRIMARY KEY (run_id, location_id, forecast_date)
 );
