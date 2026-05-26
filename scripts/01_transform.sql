@@ -170,10 +170,11 @@ WITH hourly_costs AS (
         ) AS day_avg_price_eur_mwh,
 
         CASE
-            WHEN h.action_needed = 'heating' THEN 5
-            WHEN h.action_needed = 'ventilation' THEN 2
+            WHEN h.action_needed IN ('heating', 'ventilation') THEN 5
             ELSE 0
-        END AS energy_kwh
+        END AS rule_based_energy_kwh,
+
+        5 AS continuous_energy_kwh
     FROM mart.hourly_weather_score h
 ),
 daily_base AS (
@@ -182,23 +183,56 @@ daily_base AS (
         location_id,
         location_name,
         forecast_date,
+
         COUNT(*)::integer AS forecast_hours,
+
         ROUND(AVG(temperature_c), 2) AS avg_temp_c,
         MAX(temperature_c) AS max_temp_c,
+
         SUM(CASE WHEN action_needed = 'heating' THEN 1 ELSE 0 END)::integer AS heating_hours,
         SUM(CASE WHEN action_needed = 'ventilation' THEN 1 ELSE 0 END)::integer AS ventilation_hours,
+
         ROUND(AVG(price_eur_mwh), 2) AS avg_price_eur_mwh,
 
-        ROUND(SUM(energy_kwh * price_eur_mwh / 1000), 2) AS rule_based_cost_eur,
-        ROUND(SUM(energy_kwh * day_avg_price_eur_mwh / 1000), 2) AS avg_price_cost_eur,
+        ROUND(
+            SUM(rule_based_energy_kwh * price_eur_mwh / 1000),
+            2
+        ) AS rule_based_cost_eur,
+
+        ROUND(
+            SUM(continuous_energy_kwh * price_eur_mwh / 1000),
+            2
+        ) AS avg_price_cost_eur,
 
         CASE
-            WHEN SUM(CASE WHEN action_needed IN ('heating', 'ventilation') THEN 1 ELSE 0 END) >= 12 THEN 'Kõrgem energiavajadus'
-            WHEN SUM(CASE WHEN action_needed IN ('heating', 'ventilation') THEN 1 ELSE 0 END) >= 6 THEN 'Mõõdukas energiavajadus'
+            WHEN SUM(
+                CASE
+                    WHEN action_needed IN ('heating', 'ventilation')
+                    THEN 1
+                    ELSE 0
+                END
+            ) >= 12
+            THEN 'Kõrgem energiavajadus'
+
+            WHEN SUM(
+                CASE
+                    WHEN action_needed IN ('heating', 'ventilation')
+                    THEN 1
+                    ELSE 0
+                END
+            ) >= 6
+            THEN 'Mõõdukas energiavajadus'
+
             ELSE 'Madal energiavajadus'
         END AS weather_risk_level
+
     FROM hourly_costs
-    GROUP BY run_id, location_id, location_name, forecast_date
+
+    GROUP BY
+        run_id,
+        location_id,
+        location_name,
+        forecast_date
 )
 INSERT INTO mart.daily_weather_summary (
     run_id,
