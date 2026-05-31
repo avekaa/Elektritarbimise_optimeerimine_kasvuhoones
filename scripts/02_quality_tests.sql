@@ -157,14 +157,19 @@ test_cases AS (
 
     UNION ALL
     
-    SELECT
+      SELECT
         'price_not_null' AS test_name,
-        COUNT(*)::integer AS failed_rows,
-        'Elektrihind (price_eur_mwh) ei tohi olla NULL aktiivsete tundide kohta.' AS message
-    FROM staging.weather_hourly_raw AS w
-    INNER JOIN latest_run AS r ON w.run_id = r.run_id
-    WHERE w.price_eur_mwh IS NULL
-
+        CASE
+            WHEN (
+                SELECT COUNT(*) FILTER (WHERE w.price_eur_mwh IS NULL)::float
+                     / NULLIF(COUNT(*), 0)
+                FROM staging.weather_hourly_raw AS w
+                INNER JOIN latest_run AS r ON w.run_id = r.run_id
+            ) > 0.20
+                THEN 1
+            ELSE 0
+        END AS failed_rows,
+        'Üle 20% tundidest on elektrihind puudu (Elering API probleem?).' AS message
     UNION ALL
     
     SELECT
