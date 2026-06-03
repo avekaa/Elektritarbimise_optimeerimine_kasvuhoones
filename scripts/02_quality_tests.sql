@@ -156,20 +156,14 @@ test_cases AS (
        OR h.combined_score > 100
 
     UNION ALL
-    
-      SELECT
-        'price_missing_share_under_20_pct' AS test_name,
-        CASE
-            WHEN (
-                SELECT COUNT(*) FILTER (WHERE w.price_eur_mwh IS NULL)::float
-                     / NULLIF(COUNT(*), 0)
-                FROM staging.weather_hourly_raw AS w
-                INNER JOIN latest_run AS r ON w.run_id = r.run_id
-            ) > 0.20
-                THEN 1
-            ELSE 0
-        END AS failed_rows,
-        'Puuduva elektrihinnaga staging-ridu tohib viimases laadimises olla kuni 20%.' AS message
+
+    SELECT
+        'mart_price_not_null' AS test_name,
+        COUNT(*)::integer AS failed_rows,
+        'Mart faktitabelis ei tohi elektrihind olla NULL.' AS message
+    FROM mart.fact_weather_forecast AS f
+    INNER JOIN latest_run AS r ON f.run_id = r.run_id
+    WHERE f.price_eur_mwh IS NULL
     UNION ALL
     
     SELECT
