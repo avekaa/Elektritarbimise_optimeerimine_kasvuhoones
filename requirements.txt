@@ -1,1 +1,0 @@
-# Väliseid sõltuvusi pole vaja (kasutab Python standardteeki).
