@@ -10,8 +10,8 @@ Millistel tundidel on kasvuhoones vaja kasutada elektrit nõudvaid seadmeid (kü
 
 ## Projekti allikas ja töörepo
 
-- Kursuse juhised ja näidismaterjalid pärinevad repost: `https://github.com/KristoR/ut-andmeinseneeria-2026`
-- Aktiivne töö toimub selles repos: `https://github.com/sirja-hass/Elektritarbimise_optimeerimine_kasvuhoones`
+- Kursuse juhised ja näidismaterjalid: https://github.com/KristoR/ut-andmeinseneeria-2026
+- Projekti töörepo: https://github.com/sirja-hass/Elektritarbimise_optimeerimine_kasvuhoones
 
 Projekt kasutab elektri börsihindu ja ilmaandmeid, et leida soodsaimad ajad elektri tarbimiseks.
 
@@ -19,7 +19,7 @@ Projekt kasutab elektri börsihindu ja ilmaandmeid, et leida soodsaimad ajad ele
 
 ## Projekti ulatus
 
-Projekt on tehtud kursuse **UT andmeinseneeria 2026** projektitöö nõuete järgi katab tervikliku andmetöövoo alates andmete kogumisest kuni visualiseerimiseni.
+Projekt on tehtud kursuse **UT andmeinseneride täiendkoolitusprogramm 2026** projektitöö nõuete järgi ning katab tervikliku andmetöövoo alates andmete kogumisest kuni visualiseerimiseni.
 
 1. Andmete sissevõtt (ingest) Open-Meteo Forecast API-st ja Elering NPS API-st.
 2. Andmete transformatsioon, mille käigus arvutatakse hinnanguline kasvuhoone sisetemperatuur, energiavajadus ning elektrikulu näitajad.
@@ -58,21 +58,20 @@ Projekt sisaldab automatiseeritud andmekvaliteedi teste, mis käivitatakse pära
 
 | Test | Eesmärk |
 |--------|--------|
-| dim_location_has_active_rows | Vähemalt üks aktiivne asukoht on olemas |
-| active_locations_have_coordinates | Aktiivsetel asukohtadel on korrektsed koordinaadid |
-| weather_raw_has_rows | Viimases laadimises on toorandmeid |
-| weather_raw_has_all_active_locations | Kõigi aktiivsete asukohtade kohta on andmed olemas |
-| weather_raw_has_forecast_time | Prognoosiaeg ei ole tühi |
-| unique_location_time_per_run | Duplikaatkirjed puuduvad |
-| temperature_reasonable | Temperatuur jääb mõistlikku vahemikku |
-| mart_price_not_null | Mart-kihi faktitabelis ei ole puuduvaid elektrihindu |
-| mart_fact_has_rows | Faktitabel sisaldab andmeid |
-| action_values_valid | `action_needed` sisaldab ainult lubatud väärtusi |
-| action_and_label_consistent | Tegevus ja kirjeldus on omavahel kooskõlas |
-| combined_score_in_range | Arvutatud skoor jääb lubatud vahemikku |
-| mart_daily_summary_has_rows | Päevakoondtabel sisaldab andmeid |
-| latest_pipeline_success | Viimane pipeline jooks lõppes edukalt |
-
+| `dim_location_has_active_rows` | Vähemalt üks aktiivne asukoht on olemas |
+| `active_locations_have_coordinates` | Aktiivsetel asukohtadel peavad olema korrektsed koordinaadid |
+| `weather_raw_has_rows` | Viimases edukas laadimises peab olema vähemalt üks ilmaandmete rida |
+| `latest_run_has_active_locations` | Kõigi aktiivsete asukohtade kohta peavad viimases laadimises andmed olemas olema |
+| `forecast_time_not_null` | Prognoosi aeg ei tohi puududa |
+| `forecast_time_not_stale` | Vähemalt mõni prognoositund peab olema tulevikus |
+| `unique_location_time_per_run` | Sama käivituse, asukoha ja tunni kohta tohib olla ainult üks rida |
+| `temperature_reasonable` | Temperatuur peab jääma vahemikku −50°C kuni 50°C |
+| `price_coverage_exists` | Vähemalt mõne tunni elektrihind peab olema olemas |
+| `mart_price_not_null` | Mart-kihi faktitabelis ei tohi elektrihind olla NULL |
+| `mart_hourly_score_has_rows` | Tunnipõhine skooritabel peab sisaldama ridu |
+| `action_and_label_consistent` | `action_needed` ja `suitability_label` peavad omavahel vastama |
+| `combined_score_range` | Kombineeritud sobivuse skoor peab jääma vahemikku 0 kuni 100 |
+| `mart_daily_summary_has_rows` | Päevane koondtabel peab sisaldama näidikulaua ridu |
 Viimases kontrollis läbisid kõik testid edukalt (`failed_tests = 0`).
 
 ---
@@ -127,19 +126,22 @@ FORECAST_DAYS=2
 ```mermaid
 flowchart LR
     A[Open-Meteo API]
-    C[Elering API]
+    B[Elering NPS API]
 
-    A --> B[Pipeline ingest]
-    C --> B
+    A --> C[Python ingest]
+    B --> C
 
-    B --> D[(staging)]
+    C --> D[(staging)]
 
-    D --> E[SQL transform]
+    D --> E[SQL transformatsioonid]
 
     E --> F[(mart)]
 
-    F --> G[Dashboard]
-    F --> H[Quality tests]
+    F --> G[Streamlit Dashboard]
+
+    F --> H[Andmekvaliteedi testid]
+
+    H --> I[(quality.test_results)]
 ```
 
 ---
@@ -230,13 +232,14 @@ docs/arhitektuur.md
 1. Sirja Hass
 2. Piret Sults
 3. Ave Kaare
-5. Kätlin Pendarov
+4. Kätlin Pendarov
 
 ---
 
-## Kokkuvõte, puudused ja võimalikud edasiarendused
+## Kokkuvõte
 
-Kokkuvõttes valmis projekti käigus täielik andmetöövoog kasvuhoone elektritarbimise optimeerimise hindamiseks. Valmis said:
+Kokkuvõttes valmis projekti käigus täielik andmetöövoog kasvuhoone elektritarbimise optimeerimise hindamiseks. 
+Valmis said:
 
 - Open-Meteo Forecast API ja Elering NPS API andmete automaatne sissevõtt.
 - PostgreSQL andmebaasi staging- ja mart-kihi andmemudel.
@@ -247,7 +250,9 @@ Kokkuvõttes valmis projekti käigus täielik andmetöövoog kasvuhoone elektrit
 - Cron-põhine automaatne andmete uuendamine.
 - Projekti dokumentatsioon ja käivitusjuhised.
 
-Puudused:
+---
+
+## Puudused
 
 - Kasvuhoone sisetemperatuuri hinnatakse lihtsustatud mudeliga (välistemperatuur + 5°C), mitte tegelike sensoriandmete põhjal.
 - Küte ja ventilatsioon on modelleeritud lihtsustatud loogikaga ega arvesta seadmete erinevat võimsust või töörežiime.
@@ -255,12 +260,16 @@ Puudused:
 - Eleringi day-ahead hinnad ei kata alati kogu ilmaennustuse perioodi, mistõttu kasutatakse ainult neid ridu, mille jaoks on elektrihind olemas.
 - Dashboard keskendub peamiselt päevataseme KPI-dele ning ei sisalda detailsemaid analüütilisi vaateid.
 
-Mis edasi? Kui projekti edasi arendada, võiks:
+---
+
+## Võimalikud edasiarendused
+
+Kui projekti edasi arendada, võiks:
 
 - kasutada päris kasvuhoone sensoriandmeid sisetemperatuuri hindamise asemel;
 - lisada niiskuse, päikesekiirguse ja muude keskkonnanäitajate mõju;
 - luua täpsema energiatarbimise mudeli erinevate seadmete jaoks;
-- lisada rohkem filtreid ja võrdlusvaateid dashboardile;
+- lisada dashboardile rohkem filtreid ja võrdlusvaateid;
 - lisada automaatsed teavitused kõrge elektrihinna või suure energiavajaduse korral;
 - kasutada pikemaajalisi prognoose ja ajaloolisi andmeid trendide analüüsimiseks.
 
