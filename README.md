@@ -112,10 +112,12 @@ FORECAST_DAYS=2
 
 ## Tehnoloogiad
 
-- Dashboard: Python + Streamlit + Altair
+- Dashboard: Streamlit + Altair
 - Andmebaas: PostgreSQL
+- Andmete sissevõtt: Python + Requests
 - Andmetöötlus: Python + SQL
-- Konteinerid ja ajastus: Docker + cron
+- Konteinerid ja orkestreerimine: Docker Compose
+- Ajastus: Cron
 - Versioonihaldus: GitHub
 
 ---
