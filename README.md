@@ -121,7 +121,9 @@ FORECAST_DAYS=2
 
 ---
 
-## Tehniline voog
+## Tehniline voog lühidalt
+
+Allolev skeem annab kiire ülevaate projekti põhilisest andmevoost. Detailsem arhitektuuriskeem koos Docker konteinerite, andmebaasitabelite ja kvaliteedikontrollidega on failis `docs/arhitektuur.md`.
 
 ```mermaid
 flowchart LR
