@@ -66,8 +66,6 @@ quality.test_results
     Andmekvaliteedi testide tulemused.
 ```
 
-Märkus: kui andmebaasis leidub vanast näidisloogikast pärit `outdoor_activity_windows` objekt, ei ole see lõpliku tunnipõhise kasvuhoone energia KPI-de jaoks keskne tabel.
-
 ## 6) Andmevoog
 ```mermaid
 flowchart LR

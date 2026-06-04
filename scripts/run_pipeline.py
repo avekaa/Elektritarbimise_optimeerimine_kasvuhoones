@@ -450,7 +450,6 @@ def reset_data() -> None:
                 TRUNCATE TABLE
                     staging.weather_hourly_raw,
                     staging.pipeline_runs,
-                    mart.outdoor_activity_windows,
                     mart.hourly_weather_score,
                     mart.daily_weather_summary,
                     mart.fact_weather_forecast,
