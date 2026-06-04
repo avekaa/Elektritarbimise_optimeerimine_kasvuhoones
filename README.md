@@ -265,10 +265,12 @@ Valmis said:
 
 ## Võimalikud edasiarendused
 
+Kui projekti edasi arendada, võiks:
+
 - kasutada päris kasvuhoone sensoriandmeid sisetemperatuuri hindamise asemel;
 - lisada niiskuse, päikesekiirguse ja muude keskkonnanäitajate mõju;
 - luua täpsema energiatarbimise mudeli erinevate seadmete jaoks;
-- lisada rohkem filtreid ja võrdlusvaateid dashboardile;
+- lisada dashboardile rohkem filtreid ja võrdlusvaateid;
 - lisada automaatsed teavitused kõrge elektrihinna või suure energiavajaduse korral;
 - kasutada pikemaajalisi prognoose ja ajaloolisi andmeid trendide analüüsimiseks.
 
