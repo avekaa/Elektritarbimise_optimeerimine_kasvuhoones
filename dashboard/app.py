@@ -306,12 +306,19 @@ if not filt_daily_for_charts.empty:
     })
 
     kpi1_data["Kuupäev"] = kpi1_data["forecast_date"].dt.strftime("%d.%m")
+    location_order = (
+        kpi1_data.groupby("location_name")["tunnid"]
+        .sum()
+        .sort_values(ascending=False)
+        .index
+        .tolist()
+    )
 
     chart = (
         alt.Chart(kpi1_data)
         .mark_bar()
         .encode(
-            y=alt.Y("location_name:N", title="Asukoht"),
+            y=alt.Y("location_name:N", title="Asukoht", sort=location_order),
             x=alt.X(
                 "sum(tunnid):Q",
                 title="Tunde",
