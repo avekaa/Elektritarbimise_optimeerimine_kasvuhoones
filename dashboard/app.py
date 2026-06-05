@@ -218,7 +218,7 @@ if not filt_daily.empty:
 selected_date = None
 if available_dates:
     selected_date = st.sidebar.selectbox(
-        "KPI kuupäev",
+        "Kuupäev",
         options=available_dates,
         format_func=lambda value: pd.Timestamp(value).strftime("%d.%m.%Y"),
     )
@@ -252,7 +252,11 @@ if not latest_run.empty:
 # ------------------------------------------------------------------
 if selected_date is not None:
     selected_date_label = pd.Timestamp(selected_date).strftime("%d.%m.%Y")
-    st.info(f"Asukoht: {detail_location} | Kuupäev: {selected_date_label}")
+    st.subheader("Valitud asukoha päevakokkuvõte")
+    st.caption(
+        f"Ülemised mõõdikud on arvutatud valitud asukoha ({detail_location}) "
+        f"ja kuupäeva ({selected_date_label}) kohta."
+    )
 
 if not filt_daily_for_kpi.empty:
     total_heating = int(filt_daily_for_kpi["heating_hours"].sum())
@@ -289,7 +293,11 @@ if not filt_daily_for_kpi.empty:
 # ------------------------------------------------------------------
 # KPI 1: Kütte- ja ventilatsioonitundide arv päevas
 # ------------------------------------------------------------------
-st.subheader("KPI 1 – Tegevustunnid (kõik asukohad)")
+st.subheader("Tegevustunnid asukohtade lõikes")
+st.caption(
+    "Graafik võrdleb asukohti valitud kuupäeval. "
+    "Asukohad on järjestatud tegevustundide koguarvu järgi."
+)
 
 if not filt_daily_for_charts.empty:
 
@@ -352,7 +360,12 @@ if not filt_daily_for_charts.empty:
 # ------------------------------------------------------------------
 # KPI 2: Keskmine elektrihind reeglipõhise kasutuse tundidel võrreldes päeva keskmise hinnaga
 # ------------------------------------------------------------------
-st.subheader("KPI 2 – Reeglipõhine keskmine elektrihind")
+st.subheader("Elektrihind valitud asukohas")
+if selected_date is not None:
+    st.caption(
+        f"Võrdlus näitab valitud asukoha ({detail_location}) reeglipõhiste tundide "
+        f"keskmist hinda ja sama päeva keskmist hinda."
+    )
 
 detail_daily = filt_daily_for_kpi.copy()
 avg_action_price = pd.NA
@@ -376,6 +389,43 @@ if pd.notna(avg_action_price):
         f"{avg_day_price:.4f} €/kWh"
     )
 
+    price_compare = pd.DataFrame(
+        [
+            {"hind": "Reeglipõhised tunnid", "eur_kwh": avg_action_price},
+            {"hind": "Päeva keskmine", "eur_kwh": avg_day_price},
+        ]
+    )
+    price_order = (
+        price_compare.sort_values("eur_kwh", ascending=False)["hind"]
+        .tolist()
+    )
+    price_chart = (
+        alt.Chart(price_compare)
+        .mark_bar()
+        .encode(
+            y=alt.Y("hind:N", title=None, sort=price_order),
+            x=alt.X(
+                "eur_kwh:Q",
+                title="€/kWh",
+                axis=alt.Axis(format=".3f", grid=False),
+            ),
+            color=alt.Color(
+                "hind:N",
+                title="Hind",
+                scale=alt.Scale(
+                    domain=["Reeglipõhised tunnid", "Päeva keskmine"],
+                    range=["#e07b39", "#1f77b4"],
+                ),
+            ),
+            tooltip=[
+                alt.Tooltip("hind:N", title="Näitaja"),
+                alt.Tooltip("eur_kwh:Q", title="€/kWh", format=".4f"),
+            ],
+        )
+        .properties(height=120)
+    )
+    st.altair_chart(price_chart, use_container_width=True)
+
 else:
     st.info(
         f"{detail_location}: valitud perioodil ei olnud kütte- ega ventilatsioonivajadust."
@@ -389,7 +439,7 @@ else:
 # ------------------------------------------------------------------
 # KPI 3: Hinnanguline päevane elektrikulu reeglipõhises kasutuses vs pidev kasutus
 # ------------------------------------------------------------------
-st.subheader("KPI 3 – Päevane kulu")
+st.subheader("Päevane kulu valitud asukohas")
 
 if not filt_daily_for_kpi.empty:
     cost_summary = filt_daily_for_kpi.copy()
@@ -398,83 +448,77 @@ if not filt_daily_for_kpi.empty:
 
     st.caption(
         f"Graafik näitab valitud asukohta ({detail_location}) ja kuupäeva ({selected_date_label}). "
-        "Tabel all võrdleb sama kuupäeva kõigi valitud asukohtade lõikes."
+        "Tabel all võrdleb sama kuupäeva asukohtade lõikes."
     )
 
-    cost_data = cost_summary.melt(
-        id_vars=["location_name", "forecast_date", "Kuupäev"],
-        value_vars=[
-            "rule_based_cost_eur",
-            "avg_price_cost_eur",
-            "estimated_savings_eur",
-        ],
-        var_name="näitaja",
-        value_name="euro",
-    )
-
-    cost_data["näitaja"] = cost_data["näitaja"].map({
-        "rule_based_cost_eur": "Reeglipõhine kulu",
-        "avg_price_cost_eur": "Pidev kasutus",
-        "estimated_savings_eur": "Sääst",
-    })
-    cost_order = (
-        cost_data.sort_values("euro", ascending=False)["näitaja"]
-        .tolist()
+    cost_row = cost_summary.iloc[0]
+    cost_data = pd.DataFrame(
+        [
+            {
+                "Asukoht": cost_row["location_name"],
+                "Kuupäev": cost_row["Kuupäev"],
+                "osa": "Reeglipõhine kulu",
+                "euro": cost_row["rule_based_cost_eur"],
+            },
+            {
+                "Asukoht": cost_row["location_name"],
+                "Kuupäev": cost_row["Kuupäev"],
+                "osa": "Sääst",
+                "euro": cost_row["estimated_savings_eur"],
+            },
+        ]
     )
 
     cost_chart = (
         alt.Chart(cost_data)
         .mark_bar()
         .encode(
-            y=alt.Y(
-                "näitaja:N",
-                title=None,
-                sort=cost_order,
-            ),
+            y=alt.Y("Asukoht:N", title=None),
             x=alt.X(
-                "euro:Q",
-                title="Eurot (€)",
+                "sum(euro):Q",
+                title="Pideva kasutuse kulu (€)",
                 scale=alt.Scale(zero=True),
                 axis=alt.Axis(
-                    format="d",
-                    tickMinStep=1,
+                    format=".2f",
                     grid=False,
                 ),
             ),
             color=alt.Color(
-                "näitaja:N",
-                title="Näitaja",
+                "osa:N",
+                title="Jaotus",
                 scale=alt.Scale(
-                    domain=[
-                        "Pidev kasutus",
-                        "Reeglipõhine kulu",
-                        "Sääst",
-                    ],
+                    domain=["Reeglipõhine kulu", "Sääst"],
                     range=[
-                        "#1f77b4",  # sinine - Pidev kasutus
-                        "#e07b39",  # oranž - Reeglipõhine kulu
-                        "#2ca02c",  # roheline - Sääst
+                        "#e07b39",
+                        "#2ca02c",
                     ],
                 ),
             ),
             tooltip=[
-                alt.Tooltip("location_name:N", title="Asukoht"),
+                alt.Tooltip("Asukoht:N", title="Asukoht"),
                 alt.Tooltip("Kuupäev:N", title="Kuupäev"),
-                alt.Tooltip("näitaja:N", title="Näitaja"),
-                alt.Tooltip("euro:Q", title="€", format=".2f"),
+                alt.Tooltip("osa:N", title="Näitaja"),
+                alt.Tooltip("euro:Q", title="Summa €", format=".2f"),
             ],
         )
         .properties(
-            height=300,
-            title=f"Päevane kulu ja sääst - {detail_location}, {selected_date_label}",
+            height=130,
+            title=(
+                f"Pideva kasutuse kulu jaotus - {detail_location}, {selected_date_label} "
+                f"(pidev kokku {cost_row['avg_price_cost_eur']:.2f} €)"
+            ),
         )
     )
 
     st.altair_chart(cost_chart, use_container_width=True)
 
     # Päevakoond tabel
-    st.markdown("**Päevane kulu ja sääst kõigi valitud asukohtade lõikes**")
-    filt_daily_display = filt_daily_for_charts.copy()
+    st.markdown("**Päevane kulu ja sääst asukohtade lõikes**")
+    filt_daily_display = (
+        filt_daily_for_charts
+        .sort_values("estimated_savings_eur", ascending=False)
+        .copy()
+    )
     filt_daily_display["forecast_date"] = (
         filt_daily_display["forecast_date"]
         .dt.strftime("%d.%m.%Y")
@@ -507,7 +551,15 @@ if not filt_daily_for_kpi.empty:
 # Temperatuuri detailvaade
 # ------------------------------------------------------------------
 detail_data = filt_hourly[filt_hourly["location_name"] == detail_location].copy()
-st.subheader("Temperatuur")
+if selected_date is not None:
+    detail_data = detail_data[
+        detail_data["forecast_date"].dt.date == selected_date
+    ].copy()
+    temperature_title = f"Temperatuur valitud asukohas – {detail_location}, {selected_date_label}"
+else:
+    temperature_title = f"Temperatuur valitud asukohas – {detail_location}"
+
+st.subheader(temperature_title)
 
 if not detail_data.empty:
     temp_base = alt.Chart(detail_data)
